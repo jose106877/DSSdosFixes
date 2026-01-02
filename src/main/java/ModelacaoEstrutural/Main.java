@@ -5,6 +5,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
+import ModelacaoEstrutural.facade.*;
+import ModelacaoEstrutural.model.*;
+import ModelacaoEstrutural.view.*;
+
 public class Main {
     
     private static Scanner scanner = new Scanner(System.in);
