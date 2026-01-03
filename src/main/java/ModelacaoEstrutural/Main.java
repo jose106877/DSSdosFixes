@@ -45,6 +45,7 @@ public class Main {
         cadeiaFacade = CadeiaFacade.getInstance();
     }
     
+    // TODO: mandar isto de pica
     private static void inicializarDadosExemplo() {
         // Criar restaurantes
         Restaurante rest1 = new Restaurante(1, "Porto Centro", 5);
