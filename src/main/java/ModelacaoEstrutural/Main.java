@@ -11,42 +11,24 @@ import ModelacaoEstrutural.view.*;
 
 public class Main {
     
-    private static Scanner scanner = new Scanner(System.in);
-    private static AutenticacaoFacade autenticacaoFacade;
-    private static GestaoFacade gestaoFacade;
-    private static PedidoFacade pedidoFacade;
-    private static CozinhaFacade cozinhaFacade;
-    private static CadeiaFacade cadeiaFacade;
-    private static Utilizador utilizadorLogado = null;
-    
     public static void main(String[] args) {
-        inicializarFacades();
-        inicializarDadosExemplo();
+        // Inicializar facades
+        AutenticacaoFacade autenticacaoFacade = AutenticacaoFacade.getInstance();
+        GestaoFacade gestaoFacade = GestaoFacade.getInstance();
+        PedidoFacade pedidoFacade = PedidoFacade.getInstance();
+        CozinhaFacade cozinhaFacade = CozinhaFacade.getInstance();
+        CadeiaFacade cadeiaFacade = CadeiaFacade.getInstance();
         
-        System.out.println("==============================================");
-        System.out.println("  Sistema de Gestão de Restaurantes");
-        System.out.println("==============================================\n");
+        // Inicializar dados exemplo
+        inicializarDadosExemplo(pedidoFacade, gestaoFacade, autenticacaoFacade);
         
-        boolean continuar = true;
-        while (continuar) {
-            if (utilizadorLogado == null) {
-                menuAutenticacao();
-            } else {
-                menuPrincipal();
-            }
-        }
-    }
-    
-    private static void inicializarFacades() {
-        autenticacaoFacade = AutenticacaoFacade.getInstance();
-        gestaoFacade = GestaoFacade.getInstance();
-        pedidoFacade = PedidoFacade.getInstance();
-        cozinhaFacade = CozinhaFacade.getInstance();
-        cadeiaFacade = CadeiaFacade.getInstance();
+        // Criar view geral
+        View view = new View(autenticacaoFacade, cadeiaFacade);
+        view.run();
     }
     
     // TODO: mandar isto de pica
-    private static void inicializarDadosExemplo() {
+    private static void inicializarDadosExemplo(PedidoFacade pedidoFacade, GestaoFacade gestaoFacade, AutenticacaoFacade autenticacaoFacade) {
         // Criar restaurantes
         Restaurante rest1 = new Restaurante(1, "Porto Centro", 5);
         Restaurante rest2 = new Restaurante(2, "Lisboa Baixa", 8);
@@ -83,6 +65,7 @@ public class Main {
         // Criar um gestor padrão
         autenticacaoFacade.registarGestor("admin", "admin123", "Porto Centro", true);
     }
+}
     
     private static void menuAutenticacao() {
         System.out.println("\n========== AUTENTICAÇÃO ==========");

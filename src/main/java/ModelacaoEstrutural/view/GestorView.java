@@ -1,36 +1,461 @@
 package ModelacaoEstrutural.view;
 import ModelacaoEstrutural.model.*;
-public class GestorView extends View {
+import ModelacaoEstrutural.facade.*;
+import java.util.Scanner;
+import java.util.List;
+import java.util.ArrayList;
+import java.time.LocalTime;
 
-    public GestorView(int numEcras, Ecra[] ecras) {
-        super(numEcras, ecras);
+public class GestorView {
+
+    private static Scanner scanner = new Scanner(System.in);
+    private AutenticacaoFacade autenticacaoFacade;
+    private GestaoFacade gestaoFacade;
+    private PedidoFacade pedidoFacade;
+    private CozinhaFacade cozinhaFacade;
+    private CadeiaFacade cadeiaFacade;
+    private Utilizador utilizadorLogado;
+
+    public GestorView(AutenticacaoFacade auth, GestaoFacade gestao, PedidoFacade pedido, CozinhaFacade cozinha, CadeiaFacade cadeia) {
+        this.autenticacaoFacade = auth;
+        this.gestaoFacade = gestao;
+        this.pedidoFacade = pedido;
+        this.cozinhaFacade = cozinha;
+        this.cadeiaFacade = cadeia;
+        this.utilizadorLogado = null;
     }
     
-    @Override
-    public void updateEcra(Pair<Integer, String> options) {
-        super.updateEcra(options);
-    }
-    
-    @Override
-    public void proximoEcra() {
-        super.proximoEcra();
-    }
-    
-    @Override
-    public void close() {
-        super.close();
-    }
-    
-    public void exibirIndicadores() {
-        System.out.println("=== Painel do Gestor ===");
-        System.out.println("Indicadores e estatísticas");
-        if (ecraAtual >= 0 && ecraAtual < ecras.length && ecras[ecraAtual] != null) {
-            ecras[ecraAtual].draw();
+    public void run() {
+        System.out.println("==============================================");
+        System.out.println("  Sistema de Gestão de Restaurantes");
+        System.out.println("==============================================\n");
+        
+        boolean continuar = true;
+        while (continuar) {
+            if (utilizadorLogado == null) {
+                menuAutenticacao();
+            } else {
+                menuPrincipal();
+            }
         }
     }
     
-    public void exibirRelatorios() {
-        System.out.println("=== Relatórios ===");
-        System.out.println("Relatórios de desempenho");
+    private void menuAutenticacao() {
+        System.out.println("\n========== AUTENTICAÇÃO ==========");
+        System.out.println("1. Login");
+        System.out.println("2. Registar novo gestor");
+        System.out.println("0. Sair");
+        System.out.print("Escolha uma opção: ");
+        
+        int opcao = lerInteiro();
+        
+        switch (opcao) {
+            case 1:
+                fazerLogin();
+                break;
+            case 2:
+                registarGestor();
+                break;
+            case 0:
+                System.out.println("A sair...");
+                System.exit(0);
+                break;
+            default:
+                System.out.println("Opção inválida!");
+        }
+    }
+    
+    private void fazerLogin() {
+        System.out.print("\nUsername: ");
+        String username = scanner.nextLine();
+        System.out.print("Password: ");
+        String password = scanner.nextLine();
+        
+        if (autenticacaoFacade.login(username, password)) {
+            utilizadorLogado = autenticacaoFacade.getUtilizador(username);
+            System.out.println("\n✓ Login bem sucedido! Bem-vindo, " + utilizadorLogado.getNome());
+        } else {
+            System.out.println("\n✗ Credenciais inválidas!");
+        }
+    }
+    
+    private void registarGestor() {
+        System.out.print("\nNome: ");
+        String nome = scanner.nextLine();
+        System.out.print("Password: ");
+        String password = scanner.nextLine();
+        System.out.print("Restaurante: ");
+        String restaurante = scanner.nextLine();
+        System.out.print("É COO? (s/n): ");
+        boolean coo = scanner.nextLine().equalsIgnoreCase("s");
+        
+        if (autenticacaoFacade.registarGestor(nome, password, restaurante, coo)) {
+            System.out.println("\n✓ Gestor registado com sucesso!");
+        } else {
+            System.out.println("\n✗ Erro: utilizador já existe!");
+        }
+    }
+    
+    private void menuPrincipal() {
+        System.out.println("\n========== MENU PRINCIPAL ==========");
+        System.out.println("Utilizador: " + utilizadorLogado.getNome() + 
+                         (utilizadorLogado.isCoo() ? " (COO)" : " (Gestor)"));
+        System.out.println("\n1. Sistema de Pedidos");
+        System.out.println("2. Sistema de Gestão");
+        System.out.println("3. Sistema de Cozinha");
+        System.out.println("4. Sair (Logout)");
+        System.out.print("Escolha uma opção: ");
+        
+        int opcao = lerInteiro();
+        
+        switch (opcao) {
+            case 1:
+                menuPedidos();
+                break;
+            case 2:
+                menuGestao();
+                break;
+            case 3:
+                menuCozinha();
+                break;
+            case 4:
+                utilizadorLogado = null;
+                System.out.println("\n✓ Logout realizado com sucesso!");
+                break;
+            default:
+                System.out.println("Opção inválida!");
+        }
+    }
+    
+    private void menuPedidos() {
+        System.out.println("\n========== SISTEMA DE PEDIDOS ==========");
+        System.out.println("1. Criar novo pedido");
+        System.out.println("2. Mostrar propostas disponíveis");
+        System.out.println("3. Filtrar por alergénio");
+        System.out.println("4. Mostrar alergénios");
+        System.out.println("0. Voltar");
+        System.out.print("Escolha uma opção: ");
+        
+        int opcao = lerInteiro();
+        
+        switch (opcao) {
+            case 1:
+                criarPedido();
+                break;
+            case 2:
+                mostrarPropostas();
+                break;
+            case 3:
+                filtrarAlergenio();
+                break;
+            case 4:
+                mostrarAlergenios();
+                break;
+            case 0:
+                break;
+            default:
+                System.out.println("Opção inválida!");
+        }
+    }
+    
+    private void criarPedido() {
+        System.out.println("\n--- Criar Novo Pedido ---");
+        
+        List<Proposta> propostas = pedidoFacade.mostrarPropostas();
+        if (propostas.isEmpty()) {
+            System.out.println("Não há propostas disponíveis!");
+            return;
+        }
+        
+        System.out.println("\nPropostas disponíveis:");
+        for (int i = 0; i < propostas.size(); i++) {
+            Proposta p = propostas.get(i);
+            System.out.println((i + 1) + ". " + p.getNome() + " - " + p.getPreco() + "€");
+        }
+        
+        List<Proposta> artigosSelecionados = new ArrayList<>();
+        boolean continuar = true;
+        
+        while (continuar) {
+            System.out.print("\nEscolha um artigo (0 para terminar): ");
+            int escolha = lerInteiro();
+            
+            if (escolha == 0) {
+                continuar = false;
+            } else if (escolha > 0 && escolha <= propostas.size()) {
+                artigosSelecionados.add(propostas.get(escolha - 1));
+                System.out.println("✓ Artigo adicionado!");
+            } else {
+                System.out.println("✗ Opção inválida!");
+            }
+        }
+        
+        if (artigosSelecionados.isEmpty()) {
+            System.out.println("Pedido cancelado - nenhum artigo selecionado.");
+            return;
+        }
+        
+        System.out.print("\nÉ takeaway? (s/n): ");
+        boolean takeaway = scanner.nextLine().equalsIgnoreCase("s");
+        
+        // Criar pedido
+        int numeroPedido = (int) (Math.random() * 10000);
+        Pedido pedido = new Pedido(numeroPedido, artigosSelecionados, takeaway);
+        
+        System.out.println("\n--- Pedido Criado ---");
+        System.out.println(pedido);
+        
+        // Atribuir balcão
+        int balcao = pedidoFacade.atribuirBalcao(pedido);
+        pedido.setBalcaoAtribuido(balcao);
+        
+        // Emitir documentos
+        System.out.print("\nEmitir talão? (s/n): ");
+        if (scanner.nextLine().equalsIgnoreCase("s")) {
+            Talao talao = pedidoFacade.emitirTalaoBalcao(pedido);
+            talao.imprimir();
+        }
+        
+        System.out.print("\nEmitir fatura? (s/n): ");
+        if (scanner.nextLine().equalsIgnoreCase("s")) {
+            Fatura fatura = pedidoFacade.emitirFatura(pedido);
+            fatura.imprimir();
+        }
+        
+        System.out.print("\nGerar QR Code? (s/n): ");
+        if (scanner.nextLine().equalsIgnoreCase("s")) {
+            String qrCode = pedidoFacade.emitirQRCode(pedido);
+            System.out.println("QR Code: " + qrCode);
+        }
+    }
+    
+    private void mostrarPropostas() {
+        System.out.println("\n--- Propostas Disponíveis ---");
+        List<Proposta> propostas = pedidoFacade.mostrarPropostas();
+        
+        if (propostas.isEmpty()) {
+            System.out.println("Não há propostas disponíveis!");
+            return;
+        }
+        
+        for (Proposta p : propostas) {
+            System.out.println("\n" + p);
+            System.out.println("  Custo: " + p.getCusto() + "€");
+            System.out.println("  Margem: " + p.calcularMargem() + "€");
+            
+            if (p instanceof Prato) {
+                Prato prato = (Prato) p;
+                if (!prato.getIngredientes().isEmpty()) {
+                    System.out.println("  Ingredientes: ");
+                    for (Ingrediente ing : prato.getIngredientes()) {
+                        System.out.println("    - " + ing.getNome());
+                    }
+                }
+            }
+            
+            if (!p.getAlergenios().isEmpty()) {
+                System.out.print("  Alergénios: ");
+                for (Alergenio a : p.getAlergenios()) {
+                    System.out.print(a.getNome() + " ");
+                }
+                System.out.println();
+            }
+        }
+    }
+    
+    private void filtrarAlergenio() {
+        System.out.print("\nNome do alergénio a filtrar: ");
+        String alergenio = scanner.nextLine();
+        
+        List<Proposta> filtradas = pedidoFacade.filtrarAlergenio(alergenio);
+        
+        if (filtradas.isEmpty()) {
+            System.out.println("Nenhuma proposta encontrada sem esse alergénio!");
+        } else {
+            System.out.println("\nPropostas sem " + alergenio + ":");
+            for (Proposta p : filtradas) {
+                System.out.println("  - " + p);
+            }
+        }
+    }
+    
+    private void mostrarAlergenios() {
+        System.out.println("\n--- Alergénios Registados ---");
+        List<Alergenio> alergenios = pedidoFacade.mostrarAlergenios();
+        
+        if (alergenios.isEmpty()) {
+            System.out.println("Nenhum alergénio registado!");
+        } else {
+            for (Alergenio a : alergenios) {
+                System.out.println("  - " + a.getNome());
+            }
+        }
+    }
+    
+    private void menuGestao() {
+        System.out.println("\n========== SISTEMA DE GESTÃO ==========");
+        System.out.println("1. Ver indicadores globais");
+        System.out.println("2. Ver indicadores de restaurante");
+        System.out.println("3. Registar funcionário");
+        System.out.println("4. Emitir notificação");
+        System.out.println("5. Encomendar ingrediente");
+        System.out.println("0. Voltar");
+        System.out.print("Escolha uma opção: ");
+        
+        int opcao = lerInteiro();
+        
+        switch (opcao) {
+            case 1:
+                gestaoFacade.getIndicadoresGlobal();
+                break;
+            case 2:
+                verIndicadoresRestaurante();
+                break;
+            case 3:
+                registarFuncionario();
+                break;
+            case 4:
+                emitirNotificacao();
+                break;
+            case 5:
+                encomendarIngrediente();
+                break;
+            case 0:
+                break;
+            default:
+                System.out.println("Opção inválida!");
+        }
+    }
+    
+    private void verIndicadoresRestaurante() {
+        System.out.print("\nID do restaurante: ");
+        int id = lerInteiro();
+        gestaoFacade.getIndicadoresRestaurante(id);
+    }
+    
+    private void registarFuncionario() {
+        System.out.print("\nID do restaurante: ");
+        int id = lerInteiro();
+        System.out.print("Nome do funcionário: ");
+        String nome = scanner.nextLine();
+        System.out.print("NIF: ");
+        int nif = lerInteiro();
+        
+        if (gestaoFacade.registarFuncionario(id, nome, nif)) {
+            System.out.println("✓ Funcionário registado com sucesso!");
+        } else {
+            System.out.println("✗ Erro ao registar funcionário!");
+        }
+    }
+    
+    private void emitirNotificacao() {
+        System.out.print("\nID do restaurante: ");
+        int id = lerInteiro();
+        gestaoFacade.emitirNotificacao(id);
+    }
+    
+    private void encomendarIngrediente() {
+        System.out.print("\nID do restaurante: ");
+        int id = lerInteiro();
+        System.out.print("Nome do ingrediente: ");
+        String nome = scanner.nextLine();
+        gestaoFacade.encomendarIngrediente(nome, id);
+    }
+    
+    private void menuCozinha() {
+        System.out.println("\n========== SISTEMA DE COZINHA ==========");
+        System.out.println("1. Realizar pedido");
+        System.out.println("2. Atrasar pedido");
+        System.out.println("3. Pedir ingrediente");
+        System.out.println("4. Registar etapa completa");
+        System.out.println("5. Fazer entrega");
+        System.out.println("6. Registar pedido completo");
+        System.out.println("0. Voltar");
+        System.out.print("Escolha uma opção: ");
+        
+        int opcao = lerInteiro();
+        
+        switch (opcao) {
+            case 1:
+                realizarPedido();
+                break;
+            case 2:
+                atrasarPedido();
+                break;
+            case 3:
+                pedirIngrediente();
+                break;
+            case 4:
+                registarEtapa();
+                break;
+            case 5:
+                fazerEntrega();
+                break;
+            case 6:
+                registarPedidoCompleto();
+                break;
+            case 0:
+                break;
+            default:
+                System.out.println("Opção inválida!");
+        }
+    }
+    
+    private void realizarPedido() {
+        System.out.print("\nNúmero do pedido: ");
+        int numero = lerInteiro();
+        Pedido pedido = new Pedido(numero, new ArrayList<>(), false);
+        cozinhaFacade.realizarPedido(pedido);
+    }
+    
+    private void atrasarPedido() {
+        System.out.print("\nNúmero do pedido: ");
+        int numero = lerInteiro();
+        System.out.print("Nova posição: ");
+        int posicao = lerInteiro();
+        System.out.print("Novo tempo (minutos): ");
+        int tempo = lerInteiro();
+        
+        Pedido pedido = new Pedido(numero, new ArrayList<>(), false);
+        cozinhaFacade.atrasarPedido(pedido, posicao, tempo);
+    }
+    
+    private void pedirIngrediente() {
+        System.out.print("\nNome do ingrediente: ");
+        String nome = scanner.nextLine();
+        Ingrediente ingrediente = new Ingrediente(nome, LocalTime.of(0, 5));
+        cozinhaFacade.pedirIngrediente(ingrediente);
+    }
+
+    // wtf, tira-me isto daqui
+    private void registarEtapa() {
+        System.out.print("\nNúmero da etapa: ");
+        int etapa = lerInteiro();
+        cozinhaFacade.registarEtapaCompleta(etapa);
+    }
+    
+    private void fazerEntrega() {
+        System.out.print("\nNúmero do pedido: ");
+        int numero = lerInteiro();
+        Pedido pedido = new Pedido(numero, new ArrayList<>(), false);
+        cozinhaFacade.fazerEntrega(pedido);
+    }
+    
+    private void registarPedidoCompleto() {
+        System.out.print("\nNúmero do pedido: ");
+        int numero = lerInteiro();
+        Pedido pedido = new Pedido(numero, new ArrayList<>(), false);
+        cozinhaFacade.registarPedidoCompleto(pedido);
+    }
+    
+    private int lerInteiro() {
+        while (true) {
+            try {
+                String input = scanner.nextLine();
+                return Integer.parseInt(input);
+            } catch (NumberFormatException e) {
+                System.out.print("Por favor, insira um número válido: ");
+            }
+        }
     }
 }

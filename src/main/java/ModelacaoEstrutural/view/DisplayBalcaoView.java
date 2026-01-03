@@ -1,5 +1,6 @@
 package ModelacaoEstrutural.view;
 import ModelacaoEstrutural.model.*;
+
 public class DisplayBalcaoView extends View {
 
     public DisplayBalcaoView(int numEcras, Ecra[] ecras) {

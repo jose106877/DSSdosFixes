@@ -4,15 +4,24 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+// isto vai de pica, tens um facade por use case:
+// - pedido
+// - gestao
+// - cozinha
+// todos acedem ao restauranteDAO e retiram e atualizam a info que requerem
 public class CadeiaFacade {
+
+    private static CadeiaFacade instance;
 
     private AutenticacaoFacade autenticacaoFacade;
     private Map<Integer, PedidoFacade> pedidoFacades;
-    private static CadeiaFacade instance;
+
+    private Map<Integer, Restaurante> restaurantes; // isto sera transmitido para o resto dos facades
 
     private CadeiaFacade() {
         this.autenticacaoFacade = AutenticacaoFacade.getInstance();
         this.pedidoFacades = new HashMap<>();
+        this.restaurantes = new HashMap<>(); // TODO: ir buscar ao DAO
     }
 
     public static CadeiaFacade getInstance() {

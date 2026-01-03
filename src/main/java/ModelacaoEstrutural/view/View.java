@@ -1,66 +1,140 @@
 package ModelacaoEstrutural.view;
-import ModelacaoEstrutural.model.*;
-public abstract class View {
+import java.util.Scanner;
 
-    public int ecraAtual;
-    private int ecraAnterior;
-    protected Ecra[] ecras;
+import ModelacaoEstrutural.facade.AutenticacaoFacade;
+import ModelacaoEstrutural.facade.CadeiaFacade;
+import ModelacaoEstrutural.facade.GestaoFacade;
+import ModelacaoEstrutural.facade.PedidoFacade;
 
-    public View(int numEcras, Ecra[] ecras) {
-        this.ecraAtual = 0;
-        this.ecraAnterior = -1;
-        this.ecras = new Ecra[numEcras];
-        System.arraycopy(ecras, 0, this.ecras, 0, Math.min(numEcras, ecras.length));
+public class View {
+
+    private final Scanner scanner = new Scanner(System.in);
+
+    // colocar cadeia a fornecer autenticacao aqui? serve para os restaurantes ig a cadeia
+    // colocar so cadeia e obter o resto dele, é melhor...?
+    private final CadeiaFacade cadeia;
+    private final AutenticacaoFacade autenticacaoFacade;
+    private final GestaoFacade gestaoFacade;
+    private final PedidoFacade pedidoFacade;
+    
+
+    private int restauranteSelecionado;
+
+    public View(AutenticacaoFacade autenticacaoFacade, CadeiaFacade cadeia, GestaoFacade gestaoFacade, PedidoFacade pedidoFacade) {
+        this.autenticacaoFacade = autenticacaoFacade;
+        this.cadeia = cadeia;
+        this.gestaoFacade = gestaoFacade;
+        this.pedidoFacade = pedidoFacade;
     }
 
-    public void updateEcra(Pair<Integer, String> options) {
-        if (options != null && ecras[ecraAtual] != null) {
-            int idOpcao = options.getFirst();
-            ecras[ecraAtual].updateOpcaoAt(idOpcao);
-            System.out.println("Ecrã atualizado com opção: " + options.getSecond());
-        }
-    }
+    public void run() {
+        boolean running = true;
 
-    public void proximoEcra() {
-        if (ecras[ecraAtual] != null) {
-            Ecra proximo = ecras[ecraAtual].getProximoEcra();
-            if (proximo != null) {
-                ecraAnterior = ecraAtual;
-                for (int i = 0; i < ecras.length; i++) {
-                    if (ecras[i] == proximo) {
-                        ecraAtual = i;
-                        break;
+        while (running) {
+            limparEcra();
+            System.out.println("=== MENU INICIAL ===");
+            System.out.println("1. Selecionar restaurante");
+            System.out.println("2. Login COO");
+            System.out.println("0. Sair");
+            System.out.print("Escolha uma opção: ");
+
+            int option = readInt();
+
+            switch (option) {
+                case 1: 
+                    restauranteSelecionado = menuSelecionarRestaurante();
+                    menuRestaurante();
+                    break;
+                case 2:
+                    if(login(true)) {
+                        System.out.println("Bem-Vindo COO!");
+                        GestorView gestorView = new GestorView(gestaoFacade, true);
+                        gestorView.iniciar();
+                    } else {
+                        System.out.println("Login falhado.");
                     }
-                }
+                    break;
+                case 0: 
+                    System.out.println("A sair do programa...");
+                    running = false;
+                    break;
+                default: System.out.println("Opção inválida.");
             }
         }
     }
-    
-    public void ecraAnterior() {
-        if (ecraAnterior >= 0 && ecraAnterior < ecras.length) {
-            int temp = ecraAtual;
-            ecraAtual = ecraAnterior;
-            ecraAnterior = temp;
+
+    private int menuSelecionarRestaurante() {
+        System.out.println("=== SELECIONAR RESTAURANTE ===");
+
+        for(int i = 0; i < cadeia.getRestaurantes().size(); i++) {
+            System.out.println((i + 1) + ". " + cadeia.getRestaurante(i).getNome());
+        }
+        System.out.println();
+        System.out.print("Escolha um restaurante: ");
+        int escolha = readInt();
+        return escolha;
+    }
+
+    private void menuRestaurante(){
+        System.out.println("=== MENU RESTAURANTE ===");
+        System.out.println("1. Efetuar Pedidos");
+        System.out.println("2. Operar Posto");
+        System.out.println("3. Autenticar Gestor");
+        System.out.println("0. Voltar ao menu inicial");
+        System.out.println();
+        System.out.print("Escolha uma opção: ");
+
+        int escolha = readInt();
+        switch (escolha) {
+            case 1:
+                ClienteView clientView = new ClienteView(restauranteSelecionado, pedidoFacade);
+                clientView.iniciar();
+                break;
+            case 2:
+                // pôr aqui cozinhaFacade
+                DisplayFuncionarioView displayFuncionario = new DisplayFuncionarioView(pedidoFacade);
+                displayFuncionario.iniciar();
+                break;
+            case 3:
+                if(login(false)) {
+                    System.out.println("Bem-Vindo Gestor!");
+                    GestorView gestorView = new GestorView(autenticacaoFacade, gestaoFacade, pedidoFacade, null, cadeia);
+                    gestorView.iniciar(restauranteSelecionado);
+                }
+                break;
+            case 0:
+                System.out.println("Voltando ao menu inicial...");
+                break;
+            default: System.out.println("Opção inválida.");
         }
     }
 
-    public void close() {
-        System.out.println("Fechando view...");
-        ecraAtual = 0;
-        ecraAnterior = -1;
+    private boolean login(boolean isCOO) {
+        System.out.println("=== LOGIN ===");
+        System.out.print("Username: ");
+        String user = scanner.nextLine();
+
+        System.out.print("Password: ");
+        String pass = scanner.nextLine();
+
+        if (isCOO)
+            return autenticacaoFacade.loginCOO(user, pass);
+        else
+            return autenticacaoFacade.loginGestor(user, pass);
     }
-    
-    public Ecra getEcraAtual() {
-        if (ecraAtual >= 0 && ecraAtual < ecras.length) {
-            return ecras[ecraAtual];
+
+    private int readInt() {
+        while (true) {
+            try {
+                return Integer.parseInt(scanner.nextLine());
+            } catch (NumberFormatException e) {
+                System.out.print("Introduza um número válido: ");
+            }
         }
-        return null;
     }
-    
-    public void setEcraAtual(int index) {
-        if (index >= 0 && index < ecras.length) {
-            ecraAnterior = ecraAtual;
-            ecraAtual = index;
-        }
+
+    private void limparEcra() {
+        System.out.print("\033[H\033[2J");
+        System.out.flush();
     }
 }
